@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/vsandhu-developer/students-api-backend-go/internal/config"
+	"github.com/vsandhu-developer/students-api-backend-go/internal/http/handlers/student"
+	"github.com/vsandhu-developer/students-api-backend-go/internal/storage/sqlite"
 )
 
 func main() {
@@ -19,12 +21,20 @@ func main() {
 	cfg := config.MustLoad()
 
 	// database setup
+
+	storage, err := sqlite.New(cfg)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	slog.Info("storage initialized", slog.String("env", cfg.Env))
+
 	// setup router
+
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Students Api Developed With Go Lang"))
-	})
+	router.HandleFunc("POST /api/students", student.New(storage))
 
 	// setup server
 
@@ -56,7 +66,7 @@ func main() {
 
 	defer cancel()
 
-	err := server.Shutdown(ctx)
+	err = server.Shutdown(ctx)
 
 	if err != nil {
 		slog.Error("Failed to shutdown the server", slog.String("error", err.Error()))
